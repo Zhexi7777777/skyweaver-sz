@@ -1,0 +1,12 @@
+··# 深圳天气艺术可视化项目依赖
+pandas>=2.1,<2.3         # 数据处理
+numpy>=1.24,<2.0         # 数值计算
+requests>=2.31,<3        # 网络请求
+matplotlib>=3.7,<3.9     # 可视化与动画
+scipy>=1.10,<1.13        # 平滑与插值
+noise>=1.2,<1.4          # Perlin 噪声（可选，自动降级）
+pyarrow>=14,<16          # Parquet 支持（优先）
+# fastparquet>=2024.2    # Parquet 支持（可选，pyarrow 优先）
+python-dateutil>=2.8,<3  # 时间处理
+pytz>=2024.1             # 时区支持
+pillow>=10,<11           # GIF 导出
