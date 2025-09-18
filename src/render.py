@@ -45,8 +45,9 @@ def _blend_palette(lut1, lut2, alpha):
     return lut1 * (1 - alpha) + lut2 * alpha
 
 
-def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str, fps: int = 12, size: "tuple[int,int]" = (320, 120), palette: str = "dusk", accent: float = 0.15, city_name: str = "Shenzhen", lat: float = 22.5431, lon: float = 114.0579, tz: str = "Asia/Shanghai", inbetweens: int = 0) -> None:
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = None, fps: int = 12, size: "tuple[int,int]" = (320, 120), palette: str = "dusk", accent: float = 0.15, city_name: str = "Shenzhen", lat: float = 22.5431, lon: float = 114.0579, tz: str = "Asia/Shanghai", inbetweens: int = 0, preview: bool = False) -> None:
+    if out_path and not preview:
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
     h, w = size[1], size[0]
     n_frames = len(times) * (inbetweens + 1)
     logger.info(f"生成动画帧数: {n_frames}")
@@ -108,6 +109,30 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str, fps
             frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (4,))[:, :, :3]
             frames.append(frame)
             plt.close(fig)
+    
+    # 预览模式：直接显示动画
+    if preview:
+        logger.info("启动动画预览窗口...")
+        fig, ax = plt.subplots(figsize=(w/80, h/80), dpi=80)
+        im = ax.imshow(frames[0], interpolation="bilinear")
+        ax.axis("off")
+        ax.set_title(f"{city_name} 天气艺术可视化 (按 Q 键退出)", fontsize=12, color="white", weight="bold")
+        fig.patch.set_facecolor('black')
+        
+        def update(i):
+            im.set_data(frames[i])
+            return [im]
+        
+        anim = FuncAnimation(fig, update, frames=len(frames), interval=1000//fps, blit=True, repeat=True)
+        plt.show()
+        logger.info("预览完成！")
+        return
+    
+    # 文件保存模式
+    if not out_path:
+        logger.error("非预览模式需要指定输出路径")
+        return
+        
     # 导出
     try:
         logger.info(f"尝试保存 mp4: {out_path}")

@@ -37,17 +37,44 @@ pip install -r requirements.txt
 ---
 
 ## 运行示例与参数说明
+
+### 最简单运行方式（默认预览模式）
 ```bash
-python src/main.py --days 5 --fps 12 --palette dusk --accent 0.15 --width 320 --height 120 --out out/shenzhen.mp4 --inbetweens 2
+# 使用批处理脚本（推荐）
+run.bat
+
+# 或直接运行 Python
+python src/main.py
 ```
-- `--days`      获取过去几天+未来一天数据（默认5）
+
+### 快速预览不同效果
+```bash
+run.bat --palette coral           # 珊瑚色调
+run.bat --palette twilight        # 暮光色调
+run.bat --accent 0.5             # 更强高光效果
+```
+
+### 保存文件模式
+```bash
+run.bat --save --out my_weather.mp4    # 保存为 mp4
+run.bat --save --days 7                # 保存 7 天数据
+```
+
+### 参数说明
+- `--save`      启用保存模式（默认为预览模式）
+- `--days`      获取过去几天+未来一天数据（默认3）
 - `--fps`       动画帧率（默认12）
 - `--palette`   调色板主题（dusk/coral/twilight）
-- `--accent`    高光参数 0~1（默认0.15，越大越暖亮）
+- `--accent`    高光参数 0~1（默认0.2，越大越暖亮）
 - `--width`     输出宽度（默认320）
 - `--height`    输出高度（默认120）
-- `--out`       输出文件路径
+- `--out`       输出文件路径（仅保存模式需要）
 - `--inbetweens` 相邻小时间插值帧数（平滑动画，默认0）
+
+### 使用建议
+- **最快体验**：直接运行 `run.bat` 查看效果
+- **调试参数**：`run.bat --palette coral --accent 0.3` 等
+- **最终输出**：`run.bat --save --out final.mp4` 生成文件
 
 ---
 
