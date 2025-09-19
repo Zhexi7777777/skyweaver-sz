@@ -25,69 +25,74 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def _gen_noise_field(shape, seed=0, octaves=4, persistence=0.55, lacunarity=2.0):
+def _gen_noise_field_vectorized(shape, steps=64, seed=0, octaves=4, persistence=0.55, lacunarity=2.0):
     h, w = shape
+    scale = 0.08
+    np.random.seed(seed)
     if _HAS_NOISE and noise is not None:
-        arr = np.zeros((h, w), dtype=np.float32)
-        scale = 0.08
-        for y in range(h):
-            for x in range(w):
-                arr[y, x] = noise.pnoise2(
-                    x * scale, y * scale,
-                    octaves=octaves, persistence=persistence, lacunarity=lacunarity,
-                    repeatx=w, repeaty=h, base=seed
-                )
-        arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8)
+        xs = np.arange(w)
+        ys = np.arange(h)
+        X, Y = np.meshgrid(xs, ys)
+        arrs = np.zeros((steps, h, w), dtype=np.float32)
+        for t in range(steps):
+            phase = t / steps * 8.0  # 8.0: 控制周期长度
+            arrs[t] = np.vectorize(lambda x, y: noise.pnoise2(
+                (x * scale) + phase, (y * scale) + phase,
+                octaves=octaves, persistence=persistence, lacunarity=lacunarity,
+                repeatx=w, repeaty=h, base=seed
+            ))(X, Y)
+        arrs = (arrs - arrs.min()) / (arrs.max() - arrs.min() + 1e-8)
     else:
-        np.random.seed(seed)
-        arr = np.random.rand(h, w).astype(np.float32)
-        arr = gaussian_filter(arr, sigma=6)
-        arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8)
-    return arr
+        arrs = np.random.rand(steps, h, w).astype(np.float32)
+        for t in range(steps):
+            arrs[t] = gaussian_filter(arrs[t], sigma=6)
+        arrs = (arrs - arrs.min()) / (arrs.max() - arrs.min() + 1e-8)
+    return arrs
 
 
 def _blend_palette(lut1, lut2, alpha):
     return lut1 * (1 - alpha) + lut2 * alpha
 
 
-def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = None, fps: int = 18, size: "tuple[int,int]" = (320, 120), palette: str = "dusk", accent: float = 0.15, city_name: str = "Shenzhen", lat: float = 22.5431, lon: float = 114.0579, tz: str = "Asia/Shanghai", inbetweens: int = 0, preview: bool = False, raw_data: "pd.DataFrame" = None) -> None:
+def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = None, fps: int = 18, size: "tuple[int,int]" = (320, 120), palette: str = "dusk", accent: float = 0.15, city_name: str = "Shenzhen", lat: float = 22.5431, lon: float = 114.0579, tz: str = "Asia/Shanghai", inbetweens: int = 0, preview: bool = False, raw_data: "pd.DataFrame" = None, noise_steps: int = 64) -> None:
     if out_path and not preview:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
     h, w = size[1], size[0]
     n_frames = len(times) * (inbetweens + 1)
     logger.info(f"生成动画帧数: {n_frames}")
-    # 预生成噪声基底
-    base_noise = _gen_noise_field((h, w), seed=42)
-    ridge_noise = _gen_noise_field((h, w), seed=99)
+    # 预生成噪声切片
+    base_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=42)
+    ridge_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=99)
     lut1 = get_palette(palette, n=512, accent=accent)
     lut2 = get_palette("coral", n=512, accent=accent)
     frames = []
     for i in range(len(times)):
         for k in range(inbetweens + 1):
-            # 计算当前时间索引（对于插值帧，时间保持在基准时间点）
-            t_idx = i
             alpha = k / (inbetweens + 1) if inbetweens > 0 else 0
-            # 插值特征
             def interp(key):
                 arr = features[key]
-                if t_idx < len(arr) - 1:
-                    return arr[t_idx] * (1 - alpha) + arr[t_idx + 1] * alpha
+                if i < len(arr) - 1:
+                    return arr[i] * (1 - alpha) + arr[i + 1] * alpha
                 else:
-                    return arr[t_idx]
+                    return arr[i]
             amplitude = interp("amplitude")
             drift = interp("drift")
             haze = interp("haze")
             warmth = interp("warmth")
-            # 地形生成
-            offset = int(drift * (i * (inbetweens + 1) + k) * 2) % w
-            terrain = np.roll(base_noise, offset, axis=1)
-            ridge = np.roll(ridge_noise, offset // 2, axis=1)
+            global_idx = i * (inbetweens + 1) + k
+            drift0 = features["drift"][i]
+            drift1 = features["drift"][i+1] if i < len(times)-1 else features["drift"][i]
+            drift_interp = drift0 * (1 - alpha) + drift1 * alpha
+            phase = (drift_interp * global_idx * 2) % noise_steps
+            idx0 = int(np.floor(phase))
+            idx1 = (idx0 + 1) % noise_steps
+            frac = phase - idx0
+            terrain = base_noise_arr[idx0] * (1 - frac) + base_noise_arr[idx1] * frac
+            ridge = ridge_noise_arr[idx0] * (1 - frac) + ridge_noise_arr[idx1] * frac
             img = amplitude * terrain + (1 - amplitude) * ridge
             img = (img - img.min()) / (img.max() - img.min() + 1e-8)
-            # gamma 雾化
             gamma = 0.8 + haze * 0.9
             img = np.power(img, gamma)
-            # LUT 混合
             lut = _blend_palette(lut1, lut2, warmth)
             rgb = apply_palette(img, lut)
             # 文字叠加
@@ -95,24 +100,21 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
             ax.imshow(rgb, interpolation="bilinear")
             ax.axis("off")
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0, hspace=0)
-            
             # 底部半透明黑条背景（增强对比度和高度）
             bottom_bar_height = 22
             ax.add_patch(plt.Rectangle((0, h-bottom_bar_height), w, bottom_bar_height, 
                                      facecolor='black', alpha=0.75, zorder=10))
-            
             # 获取时间和数值
+            t_idx = i
             utc_dt = times[t_idx].to_pydatetime().replace(tzinfo=UTC)
             try:
                 local_dt = utc_dt.astimezone(timezone(tz))
             except Exception:
                 local_dt = utc_dt
-            
             tval = interp("amplitude")
             hval = interp("warmth") 
             wval = interp("drift")
             cval = interp("haze")
-            
             # 获取真实天气数据用于显示
             if raw_data is not None and t_idx < len(raw_data):
                 # 显示真实的天气数据值

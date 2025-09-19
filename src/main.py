@@ -7,14 +7,15 @@ from render import make_animation
 
 def main():
     parser = argparse.ArgumentParser(description="深圳天气艺术可视化动画生成器")
-    parser.add_argument("--days", type=int, default=3, help="获取过去几天+未来一天的数据 (默认3)")
+    parser.add_argument("--days", type=int, default=5, help="获取过去几天+未来一天的数据 (默认5)")
     parser.add_argument("--fps", type=int, default=18, help="动画帧率 (默认18)")
     parser.add_argument("--palette", type=str, default="dusk", help="调色板名称 (默认dusk)")
     parser.add_argument("--accent", type=float, default=0.2, help="高光参数 0~1 (默认0.2)")
     parser.add_argument("--width", type=int, default=320, help="动画宽度 (默认320)")
     parser.add_argument("--height", type=int, default=120, help="动画高度 (默认120)")
     parser.add_argument("--out", type=str, default="out/shenzhen.mp4", help="输出文件路径 (默认out/shenzhen.mp4)")
-    parser.add_argument("--inbetweens", type=int, default=0, help="插值帧数 (默认0)")
+    parser.add_argument("--inbetweens", type=int, default=2, help="插值帧数 (默认2)")
+    parser.add_argument("--sigma", type=float, default=1.0, help="特征平滑sigma (默认1.0)")
     parser.add_argument("--save", action="store_true", help="保存文件模式（默认为预览模式）")
     args = parser.parse_args()
 
@@ -32,7 +33,7 @@ def main():
         logger.info(f"获取天气数据（天数: {args.days}）...")
         df = fetch_weather(lat, lon, past_days=args.days, forecast_days=1, cache_path=cache_path)
         logger.info(f"数据行数: {len(df)}，时间范围: {df.index.min()} ~ {df.index.max()}")
-        features, times = map_features(df)
+        features, times = map_features(df, sigma=args.sigma)
         if args.save:
             logger.info(f"保存模式：生成动画文件 {args.out}")
             make_animation(
