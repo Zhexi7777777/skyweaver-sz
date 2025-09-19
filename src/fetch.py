@@ -28,14 +28,14 @@ def fetch_weather(
     cache_ttl_minutes: int = 60
 ) -> "pd.DataFrame":
     """
-    获取深圳天气数据，带缓存与重试。
-    返回 DataFrame，索引为 UTC 的 pandas.DatetimeIndex，列为 temp, hum, wind, cloud。
+    Fetch Shenzhen weather data, with caching and retry.
+    Returns a DataFrame indexed by UTC pandas.DatetimeIndex, columns: temp, hum, wind, cloud.
     """
     now = datetime.utcnow()
     if os.path.exists(cache_path):
         mtime = datetime.utcfromtimestamp(os.path.getmtime(cache_path))
         if now - mtime < timedelta(minutes=cache_ttl_minutes):
-            logger.info(f"使用缓存数据: {cache_path}")
+            logger.info(f"Using cached data: {cache_path}")
             return pd.read_parquet(cache_path, engine=PARQUET_ENGINE)
 
     url = "https://api.open-meteo.com/v1/forecast"
@@ -52,23 +52,23 @@ def fetch_weather(
     retries = 3
     for attempt in range(retries):
         try:
-            logger.info(f"请求天气数据: {url} (尝试 {attempt+1}/{retries})")
+            logger.info(f"Requesting weather data: {url} (attempt {attempt+1}/{retries})")
             resp = requests.get(url, params=params, headers=headers, timeout=30)
             resp.raise_for_status()
             data = resp.json()
             break
         except Exception as e:
-            logger.warning(f"请求失败: {e}")
+            logger.warning(f"Request failed: {e}")
             if attempt < retries - 1:
                 sleep_time = 2 ** attempt
-                logger.info(f"{sleep_time}s 后重试...")
+                logger.info(f"Retrying in {sleep_time}s ...")
                 time.sleep(sleep_time)
             else:
                 if os.path.exists(cache_path):
-                    logger.warning("使用旧缓存数据。")
+                    logger.warning("Using old cached data.")
                     return pd.read_parquet(cache_path, engine=PARQUET_ENGINE)
                 else:
-                    logger.error("无法获取天气数据且无缓存。")
+                    logger.error("Unable to fetch weather data and no cache available.")
                     raise
 
     hourly = data.get("hourly", {})
@@ -88,5 +88,5 @@ def fetch_weather(
     df = df.dropna().sort_index()
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     df.to_parquet(cache_path, engine=PARQUET_ENGINE)
-    logger.info(f"数据已保存到缓存: {cache_path}")
+    logger.info(f"Data saved to cache: {cache_path}")
     return df

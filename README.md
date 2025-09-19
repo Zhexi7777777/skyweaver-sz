@@ -1,122 +1,122 @@
-# skyweaver-sz
-The weather art visualization in Shenzhen.
-## 深圳天气艺术可视化
+skyweaver-sz
+Weather Art Visualization for Shenzhen.
+## Shenzhen Weather Art Visualization
 
-> 用天气数据驱动的地形动画，艺术化展现深圳的气象呼吸。
-
----
-
-![效果截图占位](docs/screenshot_placeholder.png)
+> Terrain animation driven by weather data, artistically visualizing the meteorological "breath" of Shenzhen.
 
 ---
 
-## 数据源说明
-- **来源**：[Open-Meteo](https://open-meteo.com/)
-- **API**：`https://api.open-meteo.com/v1/forecast`
-- **请求参数**：`latitude, longitude, past_days, forecast_days, hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,cloud_cover, timezone=UTC`
-- **许可证**：免费公开，详见 [Open-Meteo License](https://open-meteo.com/en/docs#license)
+![Screenshot Placeholder](docs/screenshot_placeholder.png)
 
 ---
 
-## 安装步骤
+## Data Source
+- **Source**: [Open-Meteo](https://open-meteo.com/)
+- **API**: `https://api.open-meteo.com/v1/forecast`
+- **Request Parameters**: `latitude, longitude, past_days, forecast_days, hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,cloud_cover, timezone=UTC`
+- **License**: Free and public, see [Open-Meteo License](https://open-meteo.com/en/docs#license)
+
+---
+
+## Installation Steps
 ```bash
-# 1. 创建虚拟环境（推荐）
+# 1. Create a virtual environment (recommended)
 python -m venv .venv
 .venv\Scripts\activate  # Windows
-# 或 source .venv/bin/activate  # macOS/Linux
+# or source .venv/bin/activate  # macOS/Linux
 
-# 2. 安装依赖
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. 安装 ffmpeg（建议用于 mp4 导出）
-# Windows: 可用 choco install ffmpeg 或下载 release
+# 3. Install ffmpeg (recommended for mp4 export)
+# Windows: Use choco install ffmpeg or download release
 # macOS:   brew install ffmpeg
 # Linux:   sudo apt install ffmpeg
 ```
 
 ---
 
-## 运行示例与参数说明
+## Example Usage and Parameters
 
-### 最简单运行方式（默认预览模式）
+### Easiest way to run (default preview mode)
 ```bash
-# 使用批处理脚本（推荐）
+# Use the batch script (recommended)
 run.bat
 
-# 或直接运行 Python
+# Or run Python directly
 python src/main.py
 ```
 
-### 快速预览不同效果
+### Quick preview of different effects
 ```bash
-run.bat --palette coral           # 珊瑚色调
-run.bat --palette twilight        # 暮光色调  
-run.bat --palette deepsea          # 深海蓝绿（新增）
-run.bat --accent 0.5              # 更强高光效果
-run.bat --palette dusk --accent 0.8 # 冷蓝紫主调+强红色高光
+run.bat --palette coral           # Coral theme
+run.bat --palette twilight        # Twilight theme
+run.bat --palette deepsea         # Deepsea blue-green (new)
+run.bat --accent 0.5              # Stronger highlight effect
+run.bat --palette dusk --accent 0.8 # Cool blue-violet main + strong red highlight
 ```
 
-### 保存文件模式
+### Save to file mode
 ```bash
-run.bat --save --out my_weather.mp4    # 保存为 mp4
-run.bat --save --days 7                # 保存 7 天数据
+run.bat --save --out my_weather.mp4    # Save as mp4
+run.bat --save --days 7                # Save 7 days of data
 ```
 
-### 参数说明
-- `--save`      启用保存模式（默认为预览模式）
-- `--days`      获取过去几天+未来一天数据（默认3）
-- `--fps`       动画帧率（默认18，更流畅）
-- `--palette`   调色板主题（dusk=冷蓝紫/coral=暖橘/twilight=洋红/deepsea=深海蓝绿）
-- `--accent`    高光参数 0~1（默认0.2，增强时提升亮度和红相位）
-- `--width`     输出宽度（默认320）
-- `--height`    输出高度（默认120）
-- `--out`       输出文件路径（仅保存模式需要）
-- `--inbetweens` 相邻小时间插值帧数（平滑动画，默认0）
+### Parameter Description
+- `--save`      Enable save mode (default is preview mode)
+- `--days`      Get past N days + next day data (default 3)
+- `--fps`       Animation frame rate (default 18, smoother)
+- `--palette`   Palette theme (dusk=cool blue-violet/coral=warm orange/twilight=magenta/deepsea=deep blue-green)
+- `--accent`    Highlight parameter 0~1 (default 0.2, increases brightness and red phase when raised)
+- `--width`     Output width (default 320)
+- `--height`    Output height (default 120)
+- `--out`       Output file path (required for save mode)
+- `--inbetweens` Number of interpolated frames between adjacent hours (smoother animation, default 0)
 
-### 界面说明
-- **底部信息栏**：增强对比度的半透明黑色背景条，双行布局避免重叠
-  - 第一行：左侧城市坐标，右侧本地时间和UTC时间
-  - 第二行：居中显示完整天气数据（温度/湿度/风速/云量）
-- **预览标题**：Shenzhen Weather Daily
-- **高清显示**：8px字体配合2px黑色描边，确保清晰可读
-- **抗锯齿显示**：优化字体渲染，确保GIF保存时文字清晰无锯齿
+### UI Description
+- **Bottom Info Bar**: Semi-transparent black background bar for enhanced contrast, two-line layout to avoid overlap
+  - First line: Left - city coordinates, Right - local time and UTC time
+  - Second line: Centered full weather data (temperature/humidity/wind/cloud)
+- **Preview Title**: Shenzhen Weather Daily
+- **High-Definition Display**: 8px font with 2px black stroke for clarity
+- **Anti-Aliased Text**: Optimized font rendering for clear, alias-free text in GIF exports
 
-### 配色方案详解
-- **dusk**：冷蓝紫主调，暖色仅在上10%强度作为高光，accent增强时偏红
-- **coral**：薄雾蓝到暖橘珊瑚，温暖明亮
-- **twilight**：蓝绿到靛紫到洋红，神秘暮色
-- **deepsea**：深海蓝到青绿到海雾灰，整体低饱和度
-- `--out`       输出文件路径（仅保存模式需要）
-- `--inbetweens` 相邻小时间插值帧数（平滑动画，默认0）
+### Palette Details
+- **dusk**: Cool blue-violet main, warm color only as highlight in top 10% intensity, accent increases red
+- **coral**: Mist blue to warm orange-coral, warm and bright
+- **twilight**: Blue-green to violet to magenta, mysterious twilight
+- **deepsea**: Deep blue to cyan-green to sea mist gray, overall low saturation
+- `--out`       Output file path (required for save mode)
+- `--inbetweens` Number of interpolated frames between adjacent hours (smoother animation, default 0)
 
-### 使用建议
-- **最快体验**：直接运行 `run.bat` 查看效果
-- **调试参数**：`run.bat --palette coral --accent 0.3` 等
-- **最终输出**：`run.bat --save --out final.mp4` 生成文件
-
----
-
-## 数据与视觉映射
-- **温度** → 地形振幅（起伏幅度）
-- **风速** → 地形漂移速度（水平流动）
-- **云量** → 雾化强度（gamma 雾化）
-- **湿度** → 色温（冷暖色调）
+### Usage Tips
+- **Quickest experience**: Just run `run.bat` to see the effect
+- **Parameter tuning**: Try `run.bat --palette coral --accent 0.3` etc.
+- **Final output**: `run.bat --save --out final.mp4` to generate a file
 
 ---
 
-## 缓存策略与时区说明
-- 天气数据缓存于 `data/weather_shenzhen.parquet`，每小时自动刷新，网络失败时自动回退旧缓存。
-- 数据索引为 UTC，动画标题自动标注本地时区（Asia/Shanghai）与 UTC 时间。
+## Data and Visual Mapping
+- **Temperature** → Terrain amplitude (vertical relief)
+- **Wind speed** → Terrain drift speed (horizontal flow)
+- **Cloud cover** → Haze intensity (gamma haze)
+- **Humidity** → Color temperature (cool/warm tone)
 
 ---
 
-## 常见问题与解决
-- **ffmpeg 缺失**：无法导出 mp4，自动回退为 GIF。请优先安装 ffmpeg 以获得更高质量动画。
-- **网络失败**：如遇 API 请求失败，将自动使用本地缓存数据（如有）。
-- **依赖缺失**：请确保 requirements.txt 全部安装，pyarrow 或 fastparquet 至少有一个。
+## Caching Strategy and Timezone
+- Weather data cached at `data/weather_shenzhen.parquet`, auto-refreshed hourly, falls back to old cache on network failure.
+- Data indexed by UTC, animation title automatically marks local timezone (Asia/Shanghai) and UTC time.
 
 ---
 
-## 许可证与致谢
-- 本项目采用 MIT License。
-- 天气数据由 [Open-Meteo](https://open-meteo.com/) 免费提供，致谢其开放 API。
+## FAQ & Troubleshooting
+- **ffmpeg missing**: Cannot export mp4, will automatically fall back to GIF. Please install ffmpeg for higher quality animation.
+- **Network failure**: If API request fails, will automatically use local cached data (if available).
+- **Missing dependencies**: Please ensure all requirements in requirements.txt are installed, and at least one of pyarrow or fastparquet is present.
+
+---
+
+## License & Credits
+- This project is licensed under the MIT License.
+- Weather data provided free by [Open-Meteo](https://open-meteo.com/), thanks to their open API.

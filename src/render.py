@@ -11,7 +11,7 @@ from pytz import timezone, UTC
 from palettes import get_palette, apply_palette
 from scipy.ndimage import gaussian_filter, map_coordinates
 
-# 配置 matplotlib 字体以避免锯齿
+ # Configure matplotlib font to avoid aliasing
 plt.rcParams['font.family'] = ['DejaVu Sans', 'Arial', 'sans-serif']
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -36,7 +36,7 @@ def _gen_noise_field_vectorized(shape, steps=64, seed=0, octaves=4, persistence=
         X, Y = np.meshgrid(xs, ys)
         arrs = np.zeros((steps, h, w), dtype=np.float32)
         for t in range(steps):
-            phase = t / steps * 8.0  # 8.0: 控制周期长度
+            phase = t / steps * 8.0  # 8.0: Controls the period length
             arrs[t] = np.vectorize(lambda x, y: noise.pnoise2(
                 (x * scale) + phase, (y * scale) + phase,
                 octaves=octaves, persistence=persistence, lacunarity=lacunarity,
@@ -60,18 +60,18 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
     h, w = size[1], size[0]
     n_frames = len(times) * (inbetweens + 1)
-    logger.info(f"生成动画帧数: {n_frames}")
-    # 预生成多层噪声切片
+    logger.info(f"Number of animation frames: {n_frames}")
+    # Pre-generate multi-layer noise slices
     base_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=42)
     ridge_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=99)
     cloud_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=123, octaves=2, persistence=0.7)
     ripple_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=321, octaves=6, persistence=0.3)
     flow_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=888, octaves=3, persistence=0.5)
-    # 可调权重
+    # Adjustable weights
     WEIGHTS = dict(terrain=0.5, ridge=0.18, cloud=0.18, ripple=0.08, flow=0.06)
-    BLUR_SIGMA = 1.0  # 柔化半径
-    DISTORT_STRENGTH = 6.0  # 动态扭曲强度（像素）
-    DISTORT_FREQ = 1.0  # 扰动频率
+    BLUR_SIGMA = 1.0  # Blur radius
+    DISTORT_STRENGTH = 6.0  # Dynamic distortion strength (pixels)
+    DISTORT_FREQ = 1.0  # Distortion frequency
     lut1 = get_palette(palette, n=512, accent=accent)
     lut2 = get_palette("coral", n=512, accent=accent)
     frames = []
@@ -101,7 +101,7 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
             cloud = cloud_noise_arr[idx0] * (1 - frac) + cloud_noise_arr[idx1] * frac
             ripple = ripple_noise_arr[idx0] * (1 - frac) + ripple_noise_arr[idx1] * frac
             flow = flow_noise_arr[idx0] * (1 - frac) + flow_noise_arr[idx1] * frac
-            # 多层噪声叠加
+            # Multi-layer noise blending
             img = (
                 WEIGHTS['terrain'] * terrain +
                 WEIGHTS['ridge'] * ridge +
@@ -110,29 +110,29 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
                 WEIGHTS['flow'] * flow
             )
             img = (img - img.min()) / (img.max() - img.min() + 1e-8)
-            # 动态扭曲
+            # Dynamic distortion
             t = global_idx / n_frames * DISTORT_FREQ * 2 * np.pi
             dx = DISTORT_STRENGTH * np.sin(flow * 2 * np.pi + t)
             dy = DISTORT_STRENGTH * np.cos(cloud * 2 * np.pi + t)
             coords_x, coords_y = np.meshgrid(np.arange(w), np.arange(h))
             coords = np.array([coords_y + dy, coords_x + dx])
             img = map_coordinates(img, coords, order=1, mode='reflect')
-            # 柔化处理
+            # Smoothing
             img = gaussian_filter(img, sigma=BLUR_SIGMA)
             gamma = 0.8 + haze * 0.9
             img = np.power(img, gamma)
             lut = _blend_palette(lut1, lut2, warmth)
             rgb = apply_palette(img, lut)
-            # 文字叠加
+            # Text overlay
             fig, ax = plt.subplots(figsize=(w/80, h/80), dpi=80)
             ax.imshow(rgb, interpolation="bilinear")
             ax.axis("off")
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0, hspace=0)
-            # 底部半透明黑条背景（增强对比度和高度）
+            # Bottom semi-transparent black bar background (enhances contrast and height)
             bottom_bar_height = 22
             ax.add_patch(plt.Rectangle((0, h-bottom_bar_height), w, bottom_bar_height, 
                                      facecolor='black', alpha=0.75, zorder=10))
-            # 获取时间和数值
+            # Get time and values
             t_idx = i
             utc_dt = times[t_idx].to_pydatetime().replace(tzinfo=UTC)
             try:
@@ -143,39 +143,39 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
             hval = interp("warmth") 
             wval = interp("drift")
             cval = interp("haze")
-            # 获取真实天气数据用于显示
+            # Get real weather data for display
             if raw_data is not None and t_idx < len(raw_data):
-                # 显示真实的天气数据值
+                # Display real weather data values
                 real_temp = raw_data.iloc[t_idx]['temp'] if 'temp' in raw_data.columns else 0
                 real_hum = raw_data.iloc[t_idx]['hum'] if 'hum' in raw_data.columns else 0
                 real_wind = raw_data.iloc[t_idx]['wind'] if 'wind' in raw_data.columns else 0
                 real_cloud = raw_data.iloc[t_idx]['cloud'] if 'cloud' in raw_data.columns else 0
             else:
-                # 回退到特征值
-                real_temp = tval * 35  # 近似反推温度
-                real_hum = hval * 100  # 近似反推湿度
-                real_wind = wval * 18  # 近似反推风速
-                real_cloud = cval * 100  # 近似反推云量
+                # Fallback to feature values
+                real_temp = tval * 35  # Approximate temperature
+                real_hum = hval * 100  # Approximate humidity
+                real_wind = wval * 18  # Approximate wind speed
+                real_cloud = cval * 100  # Approximate cloud cover
             
-            # 优化文字布局，避免重叠 - 使用两行布局
+            # Optimize text layout, avoid overlap - use two-line layout
             
-            # 第一行：城市和时间
+            # First line: city and time
             top_y = h - 18
-            # 左侧：城市
+            # Left: city
             city_display = "Shenzhen" if city_name in ["深圳", "Shenzhen"] else city_name
             ax.text(6, top_y, f"{city_display} ({lat:.1f},{lon:.1f})", 
                    color="#ffffff", fontsize=8, va="center", ha="left", weight="bold", 
                    alpha=1.0, zorder=12, family='sans-serif',
                    path_effects=[path_effects.withStroke(linewidth=2, foreground='#000000')])
             
-            # 右侧：时间
+            # Right: time
             time_text = f"{local_dt.strftime('%m-%d %H:%M')} | {utc_dt.strftime('%H:%M')} UTC"
             ax.text(w-6, top_y, time_text,
                    color="#ffffff", fontsize=8, va="center", ha="right", weight="bold",
                    alpha=1.0, zorder=12, family='sans-serif',
                    path_effects=[path_effects.withStroke(linewidth=2, foreground='#000000')])
             
-            # 第二行：天气数据（居中显示）
+            # Second line: weather data (centered)
             bottom_y = h - 6
             data_text = f"T:{real_temp:.1f}°C  H:{real_hum:.0f}%  W:{real_wind:.1f}m/s  C:{real_cloud:.0f}%"
             ax.text(w//2, bottom_y, data_text,
@@ -188,33 +188,30 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
             frames.append(frame)
             plt.close(fig)
     
-    # 预览模式：直接显示动画
+    # Preview mode: directly display animation
     if preview:
-        logger.info("启动动画预览窗口...")
+        logger.info("Launching animation preview window...")
         fig, ax = plt.subplots(figsize=(w/80, h/80), dpi=80)
         im = ax.imshow(frames[0], interpolation="bilinear")
         ax.axis("off")
         preview_title = "Shenzhen Weather Daily"
         ax.set_title(preview_title, fontsize=12, color="white", weight="bold")
         fig.patch.set_facecolor('black')
-        
         def update(i):
             im.set_data(frames[i])
             return [im]
-        
         anim = FuncAnimation(fig, update, frames=len(frames), interval=1000//fps, blit=True, repeat=True)
         plt.show()
-        logger.info("预览完成！")
+        logger.info("Preview finished!")
         return
     
-    # 文件保存模式
+    # File save mode
     if not out_path:
-        logger.error("非预览模式需要指定输出路径")
+        logger.error("Output path must be specified in non-preview mode")
         return
-        
-    # 导出
+    # Export
     try:
-        logger.info(f"尝试保存 mp4: {out_path}")
+        logger.info(f"Attempting to save mp4: {out_path}")
         writer = FFMpegWriter(fps=fps, metadata={"title": city_name})
         fig, ax = plt.subplots(figsize=(w/80, h/80), dpi=80)
         im = ax.imshow(frames[0], interpolation="bilinear")
@@ -225,9 +222,9 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
         anim = FuncAnimation(fig, update, frames=len(frames), blit=True)
         anim.save(out_path, writer=writer, dpi=80, savefig_kwargs={"pad_inches":0, "bbox_inches":'tight'})
         plt.close(fig)
-        logger.info(f"动画已保存为 mp4: {out_path}")
+        logger.info(f"Animation saved as mp4: {out_path}")
     except Exception as e:
-        logger.warning(f"mp4 保存失败: {e}，尝试保存 GIF")
+        logger.warning(f"mp4 save failed: {e}, trying GIF")
         gif_path = os.path.splitext(out_path)[0] + ".gif"
         try:
             writer = PillowWriter(fps=fps)
@@ -240,7 +237,7 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
             anim = FuncAnimation(fig, update, frames=len(frames), blit=True)
             anim.save(gif_path, writer=writer, dpi=80, savefig_kwargs={"pad_inches":0, "bbox_inches":'tight'})
             plt.close(fig)
-            logger.info(f"动画已保存为 GIF: {gif_path}")
+            logger.info(f"Animation saved as GIF: {gif_path}")
         except Exception as e2:
-            logger.error(f"GIF 保存也失败: {e2}")
+            logger.error(f"GIF save also failed: {e2}")
             raise

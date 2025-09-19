@@ -36,28 +36,28 @@ def map_features(df: "pd.DataFrame", sigma: float = 1.0) -> "tuple[dict, pd.Date
         temp = smooth_series(df["temp"].values, sigma=sigma)
         features["amplitude"] = 0.25 + 0.75 * normalize_series(temp, lo=10, hi=35)
     else:
-        logger.warning("缺失 temp 列，使用默认值 0.5")
+        logger.warning("Missing temp column, using default value 0.5")
         features["amplitude"] = def_col(0.5)
     # wind
     if "wind" in df:
         wind = smooth_series(df["wind"].values, sigma=sigma)
         features["drift"] = 0.10 + 0.90 * normalize_series(wind, lo=0, hi=18)
     else:
-        logger.warning("缺失 wind 列，使用默认值 0.5")
+        logger.warning("Missing wind column, using default value 0.5")
         features["drift"] = def_col(0.5)
     # cloud
     if "cloud" in df:
         cloud = smooth_series(df["cloud"].values, sigma=sigma)
         features["haze"] = 0.30 + 0.70 * normalize_series(cloud, lo=10, hi=100)
     else:
-        logger.warning("缺失 cloud 列，使用默认值 0.5")
+        logger.warning("Missing cloud column, using default value 0.5")
         features["haze"] = def_col(0.5)
     # hum
     if "hum" in df:
         hum = smooth_series(df["hum"].values, sigma=sigma)
         features["warmth"] = normalize_series(hum, lo=30, hi=95)
     else:
-        logger.warning("缺失 hum 列，使用默认值 0.5")
+        logger.warning("Missing hum column, using default value 0.5")
         features["warmth"] = def_col(0.5)
     for k in features:
         features[k] = features[k].astype(np.float32)
