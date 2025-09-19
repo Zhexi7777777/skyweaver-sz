@@ -50,8 +50,10 @@ python src/main.py
 ### 快速预览不同效果
 ```bash
 run.bat --palette coral           # 珊瑚色调
-run.bat --palette twilight        # 暮光色调
-run.bat --accent 0.5             # 更强高光效果
+run.bat --palette twilight        # 暮光色调  
+run.bat --palette deepsea          # 深海蓝绿（新增）
+run.bat --accent 0.5              # 更强高光效果
+run.bat --palette dusk --accent 0.8 # 冷蓝紫主调+强红色高光
 ```
 
 ### 保存文件模式
@@ -63,11 +65,27 @@ run.bat --save --days 7                # 保存 7 天数据
 ### 参数说明
 - `--save`      启用保存模式（默认为预览模式）
 - `--days`      获取过去几天+未来一天数据（默认3）
-- `--fps`       动画帧率（默认12）
-- `--palette`   调色板主题（dusk/coral/twilight）
-- `--accent`    高光参数 0~1（默认0.2，越大越暖亮）
+- `--fps`       动画帧率（默认18，更流畅）
+- `--palette`   调色板主题（dusk=冷蓝紫/coral=暖橘/twilight=洋红/deepsea=深海蓝绿）
+- `--accent`    高光参数 0~1（默认0.2，增强时提升亮度和红相位）
 - `--width`     输出宽度（默认320）
 - `--height`    输出高度（默认120）
+- `--out`       输出文件路径（仅保存模式需要）
+- `--inbetweens` 相邻小时间插值帧数（平滑动画，默认0）
+
+### 界面说明
+- **底部信息栏**：增强对比度的半透明黑色背景条，双行布局避免重叠
+  - 第一行：左侧城市坐标，右侧本地时间和UTC时间
+  - 第二行：居中显示完整天气数据（温度/湿度/风速/云量）
+- **预览标题**：Shenzhen Weather Daily
+- **高清显示**：8px字体配合2px黑色描边，确保清晰可读
+- **抗锯齿显示**：优化字体渲染，确保GIF保存时文字清晰无锯齿
+
+### 配色方案详解
+- **dusk**：冷蓝紫主调，暖色仅在上10%强度作为高光，accent增强时偏红
+- **coral**：薄雾蓝到暖橘珊瑚，温暖明亮
+- **twilight**：蓝绿到靛紫到洋红，神秘暮色
+- **deepsea**：深海蓝到青绿到海雾灰，整体低饱和度
 - `--out`       输出文件路径（仅保存模式需要）
 - `--inbetweens` 相邻小时间插值帧数（平滑动画，默认0）
 

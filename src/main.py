@@ -8,7 +8,7 @@ from render import make_animation
 def main():
     parser = argparse.ArgumentParser(description="深圳天气艺术可视化动画生成器")
     parser.add_argument("--days", type=int, default=3, help="获取过去几天+未来一天的数据 (默认3)")
-    parser.add_argument("--fps", type=int, default=12, help="动画帧率 (默认12)")
+    parser.add_argument("--fps", type=int, default=18, help="动画帧率 (默认18)")
     parser.add_argument("--palette", type=str, default="dusk", help="调色板名称 (默认dusk)")
     parser.add_argument("--accent", type=float, default=0.2, help="高光参数 0~1 (默认0.2)")
     parser.add_argument("--width", type=int, default=320, help="动画宽度 (默认320)")
@@ -38,14 +38,14 @@ def main():
             make_animation(
                 features, times, args.out, fps=args.fps,
                 size=(args.width, args.height), palette=args.palette, accent=args.accent,
-                city_name=city_name, lat=lat, lon=lon, tz=tz, inbetweens=args.inbetweens, preview=False
+                city_name=city_name, lat=lat, lon=lon, tz=tz, inbetweens=args.inbetweens, preview=False, raw_data=df
             )
         else:
             logger.info("预览模式：直接显示动画")
             make_animation(
                 features, times, None, fps=args.fps,
                 size=(args.width, args.height), palette=args.palette, accent=args.accent,
-                city_name=city_name, lat=lat, lon=lon, tz=tz, inbetweens=args.inbetweens, preview=True
+                city_name=city_name, lat=lat, lon=lon, tz=tz, inbetweens=args.inbetweens, preview=True, raw_data=df
             )
         logger.info("动画生成完成！")
     except Exception as e:
