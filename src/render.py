@@ -9,6 +9,7 @@ from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
 from datetime import datetime
 from pytz import timezone, UTC
 from palettes import get_palette, apply_palette
+from scipy.ndimage import gaussian_filter, map_coordinates
 
 # 配置 matplotlib 字体以避免锯齿
 plt.rcParams['font.family'] = ['DejaVu Sans', 'Arial', 'sans-serif']
@@ -60,9 +61,17 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
     h, w = size[1], size[0]
     n_frames = len(times) * (inbetweens + 1)
     logger.info(f"生成动画帧数: {n_frames}")
-    # 预生成噪声切片
+    # 预生成多层噪声切片
     base_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=42)
     ridge_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=99)
+    cloud_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=123, octaves=2, persistence=0.7)
+    ripple_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=321, octaves=6, persistence=0.3)
+    flow_noise_arr = _gen_noise_field_vectorized((h, w), steps=noise_steps, seed=888, octaves=3, persistence=0.5)
+    # 可调权重
+    WEIGHTS = dict(terrain=0.5, ridge=0.18, cloud=0.18, ripple=0.08, flow=0.06)
+    BLUR_SIGMA = 1.0  # 柔化半径
+    DISTORT_STRENGTH = 6.0  # 动态扭曲强度（像素）
+    DISTORT_FREQ = 1.0  # 扰动频率
     lut1 = get_palette(palette, n=512, accent=accent)
     lut2 = get_palette("coral", n=512, accent=accent)
     frames = []
@@ -89,8 +98,27 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
             frac = phase - idx0
             terrain = base_noise_arr[idx0] * (1 - frac) + base_noise_arr[idx1] * frac
             ridge = ridge_noise_arr[idx0] * (1 - frac) + ridge_noise_arr[idx1] * frac
-            img = amplitude * terrain + (1 - amplitude) * ridge
+            cloud = cloud_noise_arr[idx0] * (1 - frac) + cloud_noise_arr[idx1] * frac
+            ripple = ripple_noise_arr[idx0] * (1 - frac) + ripple_noise_arr[idx1] * frac
+            flow = flow_noise_arr[idx0] * (1 - frac) + flow_noise_arr[idx1] * frac
+            # 多层噪声叠加
+            img = (
+                WEIGHTS['terrain'] * terrain +
+                WEIGHTS['ridge'] * ridge +
+                WEIGHTS['cloud'] * cloud +
+                WEIGHTS['ripple'] * ripple +
+                WEIGHTS['flow'] * flow
+            )
             img = (img - img.min()) / (img.max() - img.min() + 1e-8)
+            # 动态扭曲
+            t = global_idx / n_frames * DISTORT_FREQ * 2 * np.pi
+            dx = DISTORT_STRENGTH * np.sin(flow * 2 * np.pi + t)
+            dy = DISTORT_STRENGTH * np.cos(cloud * 2 * np.pi + t)
+            coords_x, coords_y = np.meshgrid(np.arange(w), np.arange(h))
+            coords = np.array([coords_y + dy, coords_x + dx])
+            img = map_coordinates(img, coords, order=1, mode='reflect')
+            # 柔化处理
+            img = gaussian_filter(img, sigma=BLUR_SIGMA)
             gamma = 0.8 + haze * 0.9
             img = np.power(img, gamma)
             lut = _blend_palette(lut1, lut2, warmth)
