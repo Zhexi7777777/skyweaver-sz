@@ -117,6 +117,13 @@ run.bat --save --days 7                # Save 7 days of data
 
 ---
 
+
+---
+
+## Project Statement
+
+This project visualizes the dynamic weather of Shenzhen through generative terrain animation, driven by real hourly meteorological data from [Open-Meteo](https://open-meteo.com/). Temperature, humidity, wind speed, and cloud cover are mapped to distinct visual parameters: temperature controls terrain amplitude, wind speed affects horizontal drift, cloud cover modulates haze intensity, and humidity adjusts color temperature. The animation blends multiple layers of procedural noise and dynamic distortion, enhanced by custom palettes (dusk, coral, twilight, deepsea) to achieve a rich, atmospheric aesthetic. The interface emphasizes clarity and beauty, with a bottom info bar displaying city coordinates, time, and live weather data. Built with Python, matplotlib, numpy, and scipy, the workflow supports mp4/GIF export and runs on major operating systems. All dependencies and parameters are documented for easy reproduction and customization, ensuring both scientific accuracy and artistic expressiveness.
+
 ## License & Credits
-- This project is licensed under the MIT License.
-- Weather data provided free by [Open-Meteo](https://open-meteo.com/), thanks to their open API.
+This project is licensed under the MIT License.
+Weather data provided free by [Open-Meteo](https://open-meteo.com/), thanks to their open API.
