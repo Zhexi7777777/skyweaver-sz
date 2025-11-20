@@ -1,14 +1,25 @@
 @echo off
-REM 深圳天气艺术可视化 - 简化运行脚本
+REM Shenzhen Weather Art Visualization - Portable run script
+REM Prefer local .venv if available, otherwise fall back to python in PATH
 
-echo 启动深圳天气艺术可视化...
-E:/skyweaver-sz/.venv/Scripts/python.exe src/main.py %*
+setlocal
+set PY_CMD=
+if exist .venv\Scripts\python.exe (
+    set "PY_CMD=.venv\Scripts\python.exe"
+)
+if "%PY_CMD%"=="" (
+    set "PY_CMD=python"
+)
+
+echo Starting Shenzhen Weather Art Visualization...
+%PY_CMD% src/main.py %*
 
 if errorlevel 1 (
-    echo.
-    echo 运行失败，请检查：
-    echo 1. Python 环境是否正确配置
-    echo 2. 依赖包是否安装完整
-    echo 3. 网络连接是否正常
-    pause
+        echo.
+    echo Run failed. Please check:
+    echo 1. Is the Python environment configured correctly?
+    echo 2. Are dependencies installed? ^(pip install -r requirements.txt^)
+    echo 3. Is the network connection working?
+        pause
 )
+endlocal
