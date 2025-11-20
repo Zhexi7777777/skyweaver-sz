@@ -55,7 +55,7 @@ def _blend_palette(lut1, lut2, alpha):
     return lut1 * (1 - alpha) + lut2 * alpha
 
 
-def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = None, fps: int = 18, size: "tuple[int,int]" = (320, 120), palette: str = "dusk", accent: float = 0.15, city_name: str = "Shenzhen", lat: float = 22.5431, lon: float = 114.0579, tz: str = "Asia/Shanghai", inbetweens: int = 0, preview: bool = False, raw_data: "pd.DataFrame" = None, noise_steps: int = 64) -> None:
+def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = None, fps: int = 18, size: "tuple[int,int]" = (320, 120), palette: str = "dusk", accent: float = 0.15, city_name: str = "Shenzhen", lat: float = 22.5431, lon: float = 114.0579, tz: str = "Asia/Shanghai", inbetweens: int = 0, preview: bool = False, raw_data: "pd.DataFrame" = None, noise_steps: int = 64, screenshot_path: str | None = None) -> None:
     if out_path and not preview:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
     h, w = size[1], size[0]
@@ -185,6 +185,15 @@ def make_animation(features: dict, times: "pd.DatetimeIndex", out_path: str = No
             fig.canvas.draw()
             frame = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
             frame = frame.reshape(fig.canvas.get_width_height()[::-1] + (4,))[:, :, :3]
+            # Save first frame screenshot if requested
+            if screenshot_path and len(frames) == 0:
+                try:
+                    os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
+                    from PIL import Image
+                    Image.fromarray(frame).save(screenshot_path)
+                    logger.info(f"Saved screenshot: {screenshot_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to save screenshot {screenshot_path}: {e}")
             frames.append(frame)
             plt.close(fig)
     

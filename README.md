@@ -6,9 +6,10 @@ Weather Art Visualization for Shenzhen.
 
 ---
 
-<!-- Replace 'docs/screenshot_placeholder.svg' with a real screenshot once available.
-If you are contributing, please add an actual screenshot image (PNG/JPG) to the 'docs' folder and update the path below. -->
-![Screenshot Placeholder](docs/screenshot_placeholder.svg)
+<!-- Screenshot below generated via: python src/main.py --screenshot docs/screenshot.png -->
+![Shenzhen Weather Art - Live Frame](docs/screenshot.png)
+
+<!-- To refresh the screenshot: rerun the command above after modifying palettes or rendering logic. -->
 
 ---
 

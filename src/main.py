@@ -17,6 +17,7 @@ def main():
     parser.add_argument("--inbetweens", type=int, default=2, help="Number of inbetween frames (default 2)")
     parser.add_argument("--sigma", type=float, default=1.0, help="Feature smoothing sigma (default 1.0)")
     parser.add_argument("--save", action="store_true", help="Save file mode (default is preview mode)")
+    parser.add_argument("--screenshot", type=str, default=None, help="Path to save first frame screenshot (PNG)")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
@@ -39,14 +40,16 @@ def main():
             make_animation(
                 features, times, args.out, fps=args.fps,
                 size=(args.width, args.height), palette=args.palette, accent=args.accent,
-                city_name=city_name, lat=lat, lon=lon, tz=tz, inbetweens=args.inbetweens, preview=False, raw_data=df
+                city_name=city_name, lat=lat, lon=lon, tz=tz, inbetweens=args.inbetweens, preview=False, raw_data=df,
+                screenshot_path=args.screenshot
             )
         else:
             logger.info("Preview mode: displaying animation directly")
             make_animation(
                 features, times, None, fps=args.fps,
                 size=(args.width, args.height), palette=args.palette, accent=args.accent,
-                city_name=city_name, lat=lat, lon=lon, tz=tz, inbetweens=args.inbetweens, preview=True, raw_data=df
+                city_name=city_name, lat=lat, lon=lon, tz=tz, inbetweens=args.inbetweens, preview=True, raw_data=df,
+                screenshot_path=args.screenshot
             )
         logger.info("Animation generation completed!")
     except Exception as e:
