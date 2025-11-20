@@ -6,7 +6,9 @@ Weather Art Visualization for Shenzhen.
 
 ---
 
-![Screenshot Placeholder](docs/screenshot_placeholder.png)
+<!-- Replace 'docs/screenshot_placeholder.svg' with a real screenshot once available.
+If you are contributing, please add an actual screenshot image (PNG/JPG) to the 'docs' folder and update the path below. -->
+![Screenshot Placeholder](docs/screenshot_placeholder.svg)
 
 ---
 
